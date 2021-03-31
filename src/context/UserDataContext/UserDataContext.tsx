@@ -1,5 +1,11 @@
 import * as React from 'react';
-import { createContext, useReducer, useState, useContext } from 'react';
+import {
+  createContext,
+  useReducer,
+  useState,
+  useContext,
+  ReactNode,
+} from 'react';
 import ReactDOM from 'react-dom';
 import useFirebase from '../../hooks/useFirebase';
 import UserLang, { UserLangAPI } from './properties/userLang';
@@ -14,7 +20,6 @@ import DivisionTableQuery, {
   DivisionTableQueryAPI,
 } from './properties/divisionTableQuery';
 import ShowIgnored, { ShowIgnoredAPI } from './properties/showIgnored';
-import DarkMode, { DarkModeAPI } from './properties/darkMode';
 import LastReadAnnouncement, {
   LastReadAnnouncementAPI,
 } from './properties/lastReadAnnouncement';
@@ -25,11 +30,12 @@ import UserProgressOnProblemsProperty, {
   UserProgressOnProblemsAPI,
 } from './properties/userProgressOnProblems';
 import LastVisitProperty, { LastVisitAPI } from './properties/lastVisit';
-import UserClassesProperty, { UserClassesAPI } from './properties/userClasses';
-import firebase from 'firebase';
+import firebaseType from 'firebase';
+import { UserPermissionsContextProvider } from './UserPermissionsContext';
 import AdSettingsProperty, {
   AdSettingsAPI,
 } from './properties/adSettingsProperty';
+import ThemeProperty, { ThemePropertyAPI } from './properties/themeProperty';
 
 // Object for counting online users
 // var Gathering = (function () {
@@ -92,12 +98,11 @@ const UserDataContextAPIs: UserDataPropertyAPI[] = [
   new HideTagsAndDifficulty(),
   new DivisionTableQuery(),
   new ShowIgnored(),
-  new DarkMode(),
+  new ThemeProperty(),
   new LastReadAnnouncement(),
   new UserProgressOnModulesProperty(),
   new UserProgressOnProblemsProperty(),
   new LastVisitProperty(),
-  new UserClassesProperty(),
   new AdSettingsProperty(),
 ];
 
@@ -106,28 +111,24 @@ type UserDataContextAPI = UserLangAPI &
   HideTagsAndDifficultyAPI &
   DivisionTableQueryAPI &
   ShowIgnoredAPI &
-  DarkModeAPI &
+  ThemePropertyAPI &
   LastReadAnnouncementAPI &
   UserProgressOnModulesAPI &
   UserProgressOnProblemsAPI &
   LastVisitAPI &
-  UserClassesAPI &
   AdSettingsAPI & {
-    firebaseUser: firebase.User;
+    firebaseUser: firebaseType.User;
     signIn: Function;
     signOut: Function;
     isLoaded: boolean;
     onlineUsers: number;
     getDataExport: Function;
     importUserData: Function;
-    isAdmin: boolean;
   };
 
 const UserDataContext = createContext<UserDataContextAPI>({
   consecutiveVisits: 0,
-  darkMode: false,
   firebaseUser: null,
-  isAdmin: false,
   getDataExport: () => {},
   importUserData: () => {},
   hideTagsAndDifficulty: false,
@@ -148,22 +149,44 @@ const UserDataContext = createContext<UserDataContextAPI>({
     1608192000000: 27,
     1608278400000: 82,
   },
-  setDarkMode: x => {},
-  setHideTagsAndDifficulty: x => {},
-  setDivisionTableQuery: x => {},
-  setLang: x => {},
-  setLastReadAnnouncement: x => {},
-  setLastViewedModule: x => {},
-  setLastVisitDate: x => {},
-  setModuleProgress: (moduleID, progress) => {},
-  setShowIgnored: x => {},
-  setUserClasses: classes => {},
-  setUserProgressOnProblems: (problem, status) => {},
+  theme: 'system',
+  setTheme: x => {
+    // do nothing
+  },
+  setHideTagsAndDifficulty: x => {
+    // do nothing
+  },
+  setDivisionTableQuery: x => {
+    // do nothing
+  },
+  setLang: x => {
+    // do nothing
+  },
+  setLastReadAnnouncement: x => {
+    // do nothing
+  },
+  setLastViewedModule: x => {
+    // do nothing
+  },
+  setLastVisitDate: x => {
+    // do nothing
+  },
+  setModuleProgress: (moduleID, progress) => {
+    // do nothing/
+  },
+  setShowIgnored: x => {
+    // do nothing
+  },
+  setUserProgressOnProblems: (problem, status) => {
+    // do nothing
+  },
   showIgnored: false,
-  signIn: () => {},
-  signOut: () => {},
-  userClasses: [],
-  userClassIds: [],
+  signIn: () => {
+    // do nothing
+  },
+  signOut: () => {
+    // do nothing
+  },
   userProgressOnModules: {},
   userProgressOnModulesActivity: [],
   userProgressOnProblems: {},
@@ -171,10 +194,12 @@ const UserDataContext = createContext<UserDataContextAPI>({
   adSettings: {
     hideMarch2021: false,
   },
-  setAdSettings: () => {},
+  setAdSettings: () => {
+    // do nothing
+  },
 });
 
-export const UserDataProvider = ({ children }) => {
+export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const firebase = useFirebase();
 
   const [firebaseUser, setFirebaseUser] = useReducer((_, user) => {
@@ -188,11 +213,10 @@ export const UserDataProvider = ({ children }) => {
   }, null);
 
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   // const [onlineUsers, setOnlineUsers] = useState(0);
 
-  const [_, triggerRerender] = useReducer(cur => cur + 1, 0);
+  const [, triggerRerender] = useReducer(cur => cur + 1, 0);
   UserDataContextAPIs.forEach(api =>
     api.setTriggerRerenderFunction(triggerRerender)
   );
@@ -216,7 +240,7 @@ export const UserDataProvider = ({ children }) => {
   //   // });
   // });
 
-  // just once, ask all API's to initialize their values from localStorage
+  // just once, ask all APIs to initialize their values from localStorage
   React.useEffect(() => {
     UserDataContextAPIs.forEach(api => api.initializeFromLocalStorage());
   }, []);
@@ -263,7 +287,6 @@ export const UserDataProvider = ({ children }) => {
           ReactDOM.unstable_batchedUpdates(() => {
             UserDataContextAPIs.forEach(api => api.importValueFromObject(data));
             UserDataContextAPIs.forEach(api => api.writeValueToLocalStorage());
-            setIsAdmin(data.isAdmin ?? false);
             setIsLoaded(true);
             triggerRerender();
           });
@@ -273,23 +296,25 @@ export const UserDataProvider = ({ children }) => {
 
   const userData = {
     firebaseUser,
-    signIn: () => {
-      if (firebase)
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    signIn: (): Promise<void> => {
+      if (firebase) {
+        return firebase
+          .auth()
+          .signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      }
+      return Promise.resolve();
     },
-    signOut: () => {
-      firebase
+    signOut: (): Promise<void> => {
+      return firebase
         .auth()
         .signOut()
         .then(() => {
           UserDataContextAPIs.forEach(api => api.eraseFromLocalStorage());
           UserDataContextAPIs.forEach(api => api.initializeFromLocalStorage());
-          setIsAdmin(false);
         });
     },
     isLoaded,
     onlineUsers: -1,
-    isAdmin,
 
     ...UserDataContextAPIs.reduce((acc, api) => {
       return {
@@ -298,7 +323,7 @@ export const UserDataProvider = ({ children }) => {
       };
     }, {}),
 
-    getDataExport: () => {
+    getDataExport: (): Record<string, any> => {
       return UserDataContextAPIs.reduce(
         (acc, api) => ({ ...acc, ...api.exportValue() }),
         {}
@@ -329,7 +354,9 @@ export const UserDataProvider = ({ children }) => {
 
   return (
     <UserDataContext.Provider value={userData}>
-      {children}
+      <UserPermissionsContextProvider>
+        {children}
+      </UserPermissionsContextProvider>
     </UserDataContext.Provider>
   );
 };

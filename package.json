@@ -8,7 +8,7 @@
     "@babel/core": "^7.12.13",
     "@babel/preset-env": "^7.12.13",
     "@babel/preset-react": "^7.12.13",
-    "@headlessui/react": "^0.2.0",
+    "@headlessui/react": "^0.3.1",
     "@loadable/component": "^5.14.1",
     "@mapbox/rehype-prism": "^0.5.0",
     "@mdx-js/mdx": "^1.6.22",
@@ -32,7 +32,7 @@
     "fuse.js": "^6.4.6",
     "gatsby": "^2.32.2",
     "gatsby-image": "^2.11.0",
-    "gatsby-plugin-algolia": "^0.16.3",
+    "gatsby-plugin-algolia": "https://github.com/thecodingwizard/gatsby-plugin-algolia",
     "gatsby-plugin-catch-links": "^2.10.0",
     "gatsby-plugin-create-client-paths": "^2.10.0",
     "gatsby-plugin-disqus": "^1.2.2",
@@ -61,6 +61,7 @@
     "github-slugger": "^1.3.0",
     "gray-matter": "^4.0.2",
     "heroicons-react": "^1.3.0",
+    "import-fresh": "^3.3.0",
     "katex": "^0.12.0",
     "loadjs": "^4.2.0",
     "moment": "^2.29.1",
@@ -75,12 +76,14 @@
     "react-calendar-heatmap": "^1.8.1",
     "react-data-grid": "6.1.0",
     "react-dom": "^17.0.1",
+    "react-dropzone": "^11.3.1",
     "react-flatpickr": "^3.10.6",
     "react-frappe-charts": "^4.0.0",
     "react-full-screen": "^1.0.0",
     "react-helmet": "^6.1.0",
     "react-instantsearch-dom": "^6.9.0",
     "react-markdown": "^5.0.3",
+    "react-notification-system": "^0.4.0",
     "react-select": "^4.0.2",
     "react-share": "^4.3.1",
     "react-simplemde-editor": "^4.1.3",
@@ -92,6 +95,7 @@
     "rehype-react": "^6.2.0",
     "remark": "^13.0.0",
     "remark-external-links": "^8.0.0",
+    "remark-gfm": "^1.0.0",
     "remark-math": "3",
     "styled-components": "^5.2.1",
     "tailwindcss": "^2.0.2",
@@ -99,7 +103,8 @@
     "tippy.js": "^6.2.7",
     "ts-node": "^9.1.1",
     "twin.macro": "^2.2.0",
-    "typescript": "^4.1.3"
+    "typescript": "^4.1.3",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.11.9",
@@ -119,7 +124,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "gatsby build",
+    "build": "cp ./content/problems.schema.json ./static/problems.schema.json && gatsby build",
     "develop": "gatsby develop",
     "format": "prettier --write .",
     "start": "npm run develop",
@@ -142,7 +147,7 @@
     }
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,md}": "prettier --write"
+    "*.{js,jsx,ts,tsx,json,md,mdx}": "prettier --write"
   },
   "babelMacros": {
     "twin": {
